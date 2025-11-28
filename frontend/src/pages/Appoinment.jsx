@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext';
 import NavBar from '../components/NavBar';
 import { assets } from '../assets/assets';
+import RelatedDoctors from '../components/RelatedDoctors';
 
 const Appoinment = () => {
   const {docId} =useParams();
@@ -71,7 +72,7 @@ const Appoinment = () => {
   },[docInfo]);
 
   useEffect(()=>{
-    console.log(docSlot);
+    // console.log(docSlot);
   },[docSlot])
 
   return  docInfo && (
@@ -126,7 +127,10 @@ const Appoinment = () => {
             ))
           }
         </div>
+        <button className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 '>Book on appoinment</button>
       </div>
+      {/* ---- Listing Related Doctors ---- */}
+      <RelatedDoctors docId={docId} speciality={docInfo.speciality}/>
     </div>
   )
 }
