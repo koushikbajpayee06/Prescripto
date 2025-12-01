@@ -11,8 +11,8 @@ app.use(express.json())
 app.use(cors())
 
 // api endpoints
-app.get('/',(req, res)=>{
+app.get('/abc',(req, res)=>{
     res.send("API working")
 });
 
-app.listen(port,()=> console.log("Server Started", port));
+app.listen(port,()=> console.log("Server Started", port)); 
