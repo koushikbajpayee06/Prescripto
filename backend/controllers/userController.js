@@ -42,4 +42,27 @@ const registerUser = async (req, res) =>{
     }
 }
 
-export {registerUser}
+// API for user login
+const loginUser = async (req,res)=>{
+    try{
+        const  {email, password} = req.body;
+        const user = await userModel.findOne({email});
+
+        if(!user){
+            res.json({success:false, message:"User does not exist"})
+        }
+
+        const isMatch = await bcrypt.compare(password,user.password);
+
+        if(isMatch){
+            const token = jwt.sign({id:user._id}, process.env.JWT_SECRET)
+            res.json({success:true, token});
+        }else{
+            res.json({success:false, message:"Invalid Credentials"});
+        }
+    }catch(err){
+        console.log(err);
+        res.json({success:false, message:err.message}) 
+    }
+} 
+export {registerUser, loginUser}
