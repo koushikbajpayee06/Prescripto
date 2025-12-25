@@ -78,4 +78,14 @@ const getProfile = async(req, res)=>{
         res.json({success:false, message:err.message})
     }
 }
+// API to update users profile
+const updateProfile = async(req,res)=>{
+    try{
+        const {userId, name, phone, address, dob, gender} = req.body;
+        const imageFile = req.file
+    }catch(err){
+        console.log(err);
+        res.json({success:false, message:err.message})
+    }
+}
 export {registerUser, loginUser, getProfile}
