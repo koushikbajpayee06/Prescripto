@@ -101,4 +101,4 @@ const updateProfile = async(req,res)=>{
         res.json({success:false, message:err.message})
     }
 }
-export {registerUser, loginUser, getProfile}
+export {registerUser, loginUser, getProfile,updateProfile}
