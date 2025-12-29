@@ -70,7 +70,7 @@ const loginUser = async (req,res)=>{
 // API to get user profile data
 const getProfile = async(req, res)=>{
     try{
-        const userId  = req.userId;
+        const userId  = req.userId;      
         const userData = await userModel.findById(userId).select('-password');
 
         res.json({success:true, userData})
@@ -81,12 +81,18 @@ const getProfile = async(req, res)=>{
 }
 // API to update users profile
 const updateProfile = async(req,res)=>{
+
     try{
-        const {userId, name, phone, address, dob, gender} = req.body;
+        const userId = req.userId;
+        const {name, phone, address, dob, gender} = req.body;
         const imageFile = req.file;
+
         if(!name || !phone || ! dob || !gender ){
             return res.json({success:false, message:"Data Missing"})
         }
+        console.log("RAW ADDRESS FROM CLIENT:", address);
+        console.log("AUTH USER ID:", req.userId);
+
         await userModel.findByIdAndUpdate(userId, {name,phone,address:JSON.parse(address),dob,gender})
         if(imageFile){
             //Upload image to cloudinary 
@@ -101,4 +107,4 @@ const updateProfile = async(req,res)=>{
         res.json({success:false, message:err.message})
     }
 }
-export {registerUser, loginUser, getProfile,updateProfile}
+export {registerUser, loginUser, getProfile, updateProfile}
