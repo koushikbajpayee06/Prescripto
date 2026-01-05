@@ -1,110 +1,165 @@
-import validator from 'validator'
-import bcrypt from 'bcrypt'
-import userModel from '../models/userModel.js';
-import jwt from 'jsonwebtoken'
-import {v2 as cloudinary} from 'cloudinary'
+import validator from "validator";
+import bcrypt from "bcrypt";
+import userModel from "../models/userModel.js";
+import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
+import Appointment from "../models/appointmentModel.js";
+import doctorModel from "../models/doctorModel.js";
 
 // API to register user
-const registerUser = async (req, res) =>{
-    try{
-        const {name, email, password} = req.body;
+const registerUser = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-        if(!name || !email || !password){
-            return res.json({success:false,message:"Missing Details"})
-        }
-        // validating email formmat
-        if(!validator.isEmail(email)){
-             return res.json({success:false,message:"Enter a valid email"})
-        }
-        // validating strong password
-        if(password.length<8){
-            return res.json({success:false,message:"Enter a strong password"})
-        }
-        // hashing user password
-        const salt = await bcrypt.genSalt(10);
-        const hasPassword = await bcrypt.hash(password, salt);
-
-        const userData = {
-            name,
-            email,
-            password:hasPassword
-        }
-
-        const newUser = new userModel(userData)
-        const user = await newUser.save();
-
-        const token = jwt.sign({if:user._id}, process.env.JWT_SECRET)
-
-        res.json({success:true, token})
-
-    }catch(err){
-        console.log(err);
-        res.json({success:false, message:err.message})
+    if (!name || !email || !password) {
+      return res.json({ success: false, message: "Missing Details" });
     }
-}
+    // validating email formmat
+    if (!validator.isEmail(email)) {
+      return res.json({ success: false, message: "Enter a valid email" });
+    }
+    // validating strong password
+    if (password.length < 8) {
+      return res.json({ success: false, message: "Enter a strong password" });
+    }
+    // hashing user password
+    const salt = await bcrypt.genSalt(10);
+    const hasPassword = await bcrypt.hash(password, salt);
+
+    const userData = {
+      name,
+      email,
+      password: hasPassword,
+    };
+
+    const newUser = new userModel(userData);
+    const user = await newUser.save();
+
+    const token = jwt.sign({ if: user._id }, process.env.JWT_SECRET);
+
+    res.json({ success: true, token });
+  } catch (err) {
+    console.log(err);
+    res.json({ success: false, message: err.message });
+  }
+};
 
 // API for user login
-const loginUser = async (req,res)=>{
-    try{
-        const  {email, password} = req.body;
-        const user = await userModel.findOne({email});
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await userModel.findOne({ email });
 
-        if(!user){
-            return res.json({success:false, message:"User does not exist"})
-        }
-
-        const isMatch = await bcrypt.compare(password,user.password);
-
-        if(isMatch){
-            const token = jwt.sign({id:user._id}, process.env.JWT_SECRET)
-            res.json({success:true, token});
-        }else{
-            res.json({success:false, message:"Invalid Credentials"});
-        }
-    }catch(err){
-        console.log(err);
-        res.json({success:false, message:err.message}) 
+    if (!user) {
+      return res.json({ success: false, message: "User does not exist" });
     }
-} 
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      res.json({ success: true, token });
+    } else {
+      res.json({ success: false, message: "Invalid Credentials" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.json({ success: false, message: err.message });
+  }
+};
 
 // API to get user profile data
-const getProfile = async(req, res)=>{
-    try{
-        const userId  = req.userId;      
-        const userData = await userModel.findById(userId).select('-password');
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const userData = await userModel.findById(userId).select("-password");
 
-        res.json({success:true, userData})
-    }catch(err){
-        console.log(err);
-        res.json({success:false, message:err.message})
-    }
-}
+    res.json({ success: true, userData });
+  } catch (err) {
+    console.log(err);
+    res.json({ success: false, message: err.message });
+  }
+};
 // API to update users profile
-const updateProfile = async(req,res)=>{
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { name, phone, address, dob, gender } = req.body;
+    const imageFile = req.file;
 
-    try{
-        const userId = req.userId;
-        const {name, phone, address, dob, gender} = req.body;
-        const imageFile = req.file;
-
-        if(!name || !phone || ! dob || !gender ){
-            return res.json({success:false, message:"Data Missing"})
-        }
-        console.log("RAW ADDRESS FROM CLIENT:", address);
-        console.log("AUTH USER ID:", req.userId);
-
-        await userModel.findByIdAndUpdate(userId, {name,phone,address:JSON.parse(address),dob,gender})
-        if(imageFile){
-            //Upload image to cloudinary 
-            const imageUpload = await cloudinary.uploader.upload(imageFile.path,{resource_type:'image'});
-            const imageURL = imageUpload.secure_url;
-
-            await userModel.findByIdAndUpdate(userId,{image:imageURL})
-        }
-        res.json({success:true, message:"Profile Updated"})
-    }catch(err){
-        console.log(err);
-        res.json({success:false, message:err.message})
+    if (!name || !phone || !dob || !gender) {
+      return res.json({ success: false, message: "Data Missing" });
     }
-}
-export {registerUser, loginUser, getProfile, updateProfile}
+    console.log("RAW ADDRESS FROM CLIENT:", address);
+    console.log("AUTH USER ID:", req.userId);
+
+    await userModel.findByIdAndUpdate(userId, {
+      name,
+      phone,
+      address: JSON.parse(address),
+      dob,
+      gender,
+    });
+    if (imageFile) {
+      //Upload image to cloudinary
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      const imageURL = imageUpload.secure_url;
+
+      await userModel.findByIdAndUpdate(userId, { image: imageURL });
+    }
+    res.json({ success: true, message: "Profile Updated" });
+  } catch (err) {
+    console.log(err);
+    res.json({ success: false, message: err.message });
+  }
+};
+
+//API to book Appointment
+const bookAppointment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { docId, slotDate, slotTime } = req.body;
+
+    const docData = await doctorModel.findById(docId).select("-password");
+    if (!docData.available) {
+      return res.json({ success: false, message: "Doctor not available" });
+    }
+    let slots_booked = docData.slots_booked;
+    // checking for slot availablity
+    if (slots_booked[slotDate]) {
+      if (slots_booked[slotDate].includes(slotTime)) {
+        return res.json({ success: false, message: "Slot not available" });
+      } else {
+        slots_booked[slotDate].push(slotTime);
+      }
+    }else{
+        slots_booked[slotDate] = [];
+        slots_booked[slotDate].push(slotTime)
+    }
+
+    const userData = await userModel.findById(userId).select('-password');
+    delete docData.slots_booked;
+    const appoinmentData = {
+        userId,
+        docId,
+        userData,
+        docData,
+        amount:docData.fees,
+        slotTime,
+        slotDate,
+        date:Date.now()
+    }
+    const  newAppointment = new Appointment(appoinmentData);
+    await newAppointment.save();
+
+    // Save new slots data in doctors data
+    await doctorModel.findByIdAndUpdate(docId,{slots_booked});
+    res.json({success:true, message: 'Appointment Booked' })
+  } catch (err) {
+    console.log(err);
+    res.json({ success: false, message: err.message });
+  }
+};
+export { registerUser, loginUser, getProfile, updateProfile ,bookAppointment};
